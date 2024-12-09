@@ -1,8 +1,9 @@
 pipeline {
-
     parameters {
         booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
-    } 
+        booleanParam(name: 'destroy', defaultValue: false, description: 'Choose to destroy the infrastructure?') // New destroy parameter
+    }
+
     environment {
         AWS_CREDENTIALS = credentials('aws-crendentails-JERSON POGI') // Fetch the secret
     }
@@ -10,7 +11,7 @@ pipeline {
     agent any
 
     stages {
-        stage('checkout') {
+        stage('Checkout') {
             steps {
                 script {
                     dir("terraform") {
@@ -44,9 +45,17 @@ pipeline {
             }
         }
 
-        stage('Apply') {
+        stage('Apply or Destroy') {
             steps {
-                sh 'pwd;cd terraform/ ; terraform apply -input=false tfplan'
+                script {
+                    if (params.destroy) {
+                        echo "Destroying infrastructure..."
+                        sh 'pwd;cd terraform/ ; terraform destroy -auto-approve' // Destroy command
+                    } else {
+                        echo "Applying plan..."
+                        sh 'pwd;cd terraform/ ; terraform apply -input=false tfplan' // Apply command
+                    }
+                }
             }
         }
     }
